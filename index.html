@@ -205,6 +205,8 @@
     <div id="resultSection" class="result-section hidden">
         <h2>测试结果</h2>
         <div class="score">得分：<span id="score">0</span> / <span id="max">0</span></div>
+        <!-- 新增错误题目统计提示 -->
+        <p style="text-align:center; color:#666;">以下为错误题目统计（共 <span id="wrongCount">0</span> 道）</p>
         <div id="detail"></div>
         <button id="restartBtn">重新开始</button>
     </div>
@@ -261,7 +263,9 @@
             closeModalBtn: document.getElementById('closeModalBtn'),
             // 正确答案显示区域
             correctAnswerDisplay: document.getElementById('correctAnswerDisplay'),
-            correctAnswerText: document.getElementById('correctAnswerText')
+            correctAnswerText: document.getElementById('correctAnswerText'),
+            // 新增错误题目计数元素
+            wrongCount: document.getElementById('wrongCount')
         };
 
         // 初始化函数
@@ -564,7 +568,7 @@
             }
         }
 
-        // 显示结果
+        // 显示结果（核心修改：仅渲染错误题目）
         function showResults() {
             // 隐藏测验区域，显示结果区域
             elements.quizSection.classList.add('hidden');
@@ -574,31 +578,41 @@
             elements.score.textContent = userScore;
             elements.maxScore.textContent = currentQuestions.length;
             
-            // 生成结果表格
-            let tableHtml = '<table><tr><th>题</th><th>原始题号</th><th>你的答案</th><th>正确答案</th><th>结果</th></tr>';
+            // 筛选错误题目，统计错误数量
+            const wrongAnswers = userAnswers.filter(answer => !answer.isCorrect);
+            elements.wrongCount.textContent = wrongAnswers.length;
             
-            userAnswers.forEach((answer, index) => {
+            // 生成错误题目表格（仅渲染错误题目）
+            let tableHtml = '<table><tr><th>错误题序</th><th>原始题号</th><th>你的答案</th><th>正确答案</th><th>结果</th></tr>';
+            
+            wrongAnswers.forEach((answer, wrongIndex) => {
                 // 对答案进行格式化显示
                 const formattedUserAnswer = formatAnswer(answer.question, answer.userAnswer);
                 const formattedCorrectAnswer = formatAnswer(answer.question, answer.correctAnswer);
                 
-                // 为每个题目序号创建点击元素
+                // 找到该错误题目在总答题记录中的原始索引（用于详情弹窗）
+                const originalIndex = userAnswers.findIndex(item => item === answer);
+                
+                // 渲染错误题目行
                 tableHtml += `
                 <tr>
                     <td>
                         <span class="question-number" 
-                              onclick="showQuestionDetail(${index})">
-                            ${index + 1}
+                              onclick="showQuestionDetail(${originalIndex})">
+                            ${wrongIndex + 1}
                         </span>
                     </td>
                     <td>${answer.question.originalIndex}</td>
                     <td>${formattedUserAnswer}</td>
                     <td>${formattedCorrectAnswer}</td>
-                    <td class="${answer.isCorrect ? 'correct' : 'incorrect'}">
-                        ${answer.isCorrect ? '✓' : '✗'}
-                    </td>
+                    <td class="incorrect">✗</td>
                 </tr>`;
             });
+            
+            // 若没有错误题目，显示提示文本
+            if (wrongAnswers.length === 0) {
+                tableHtml += '<tr><td colspan="5" style="text-align:center; color:#666;">恭喜！没有错误题目</td></tr>';
+            }
             
             tableHtml += '</table>';
             elements.detail.innerHTML = tableHtml;
@@ -627,24 +641,24 @@
                 <ul>`;
             
             // 添加选项
-            question.options.forEach(option => {
+            question.options。forEach(option => {
                 const isCorrect = option.letter === question.answer;
-                const isUserAnswer = answerInfo.userAnswer.includes(option.letter);
+                const isUserAnswer = answerInfo。userAnswer。includes(option.letter);
                 let className = '';
                 
                 if (isCorrect) {
                     className = 'correct';
-                } else if (isUserAnswer && !answerInfo.isCorrect) {
+                } else if (isUserAnswer && !answerInfo。isCorrect) {
                     className = 'incorrect';
                 }
                 
                 // 判断题选项显示格式化
-                let displayLetter = option.letter;
-                if (question.type === '判断') {
+                let displayLetter = option。letter;
+                if (question。输入 === '判断') {
                     displayLetter = option.letter === 'A' ? 'A（T）' : 'B（F）';
                 }
                 
-                detailHtml += `<li class="${className}">${displayLetter}. ${option.text} ${isCorrect ? '(正确答案)' : ''}</li>`;
+                detailHtml += `<li class="${className}">${displayLetter}. ${option。text} ${isCorrect ? '(正确答案)' : ''}</li>`;
             });
             
             detailHtml += `
@@ -652,12 +666,12 @@
                 <div class="answer-info">
                     <p><strong>你的答案：</strong>${formattedUserAnswer || '未作答'}</p>
                     <p><strong>正确答案：</strong>${formattedCorrectAnswer}</p>
-                    <p><strong>结果：</strong><span class="${answerInfo.isCorrect ? 'correct' : 'incorrect'}">${answerInfo.isCorrect ? '正确' : '错误'}</span></p>
+                    <p><strong>结果：</strong><span class="${answerInfo。isCorrect ? 'correct' : 'incorrect'}">${answerInfo。isCorrect ? '正确' : '错误'}</span></p>
                 </div>`;
             
             // 更新模态框内容并显示
             elements.modalContent.innerHTML = detailHtml;
-            elements.questionModal.style.display = 'flex';
+            elements。questionModal。style.display = 'flex';
         };
 
         // 隐藏模态框
