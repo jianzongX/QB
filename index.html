@@ -718,16 +718,16 @@
                     <p><strong>结果：</strong><span class="${answerInfo。isCorrect ? 'correct' : 'incorrect'}">${answerInfo。isCorrect ? '正确' : '错误'}</span></p>
                 </div>`;
             
-            elements.modalContent.innerHTML = detailHtml;
+            elements。modalContent。innerHTML = detailHtml;
             elements.questionModal.style.display = 'flex';
         };
 
         function reviewWrongQuestions() {
             const wrongQuestions = userAnswers
-                。filter(answer => !answer.isCorrect)
+                。filter(answer => !answer。isCorrect)
                 。map(answer => answer.question);
             
-            if (wrongQuestions.length === 0) {
+            if (wrongQuestions。length === 0) {
                 alert('恭喜！您没有错题需要复习');
                 return;
             }
@@ -737,11 +737,11 @@
             userScore = 0;
             userAnswers = [];
             
-            elements.resultSection.classList.add('hidden');
-            elements.quizSection.classList.remove('hidden');
-            elements.quizArea.classList.remove('hidden');
+            elements。resultSection。classList。add('hidden');
+            elements。quizSection。classList。remove('hidden');
+            elements。quizArea。classList。remove('hidden');
             
-            elements.totalQuestions.textContent = currentQuestions.length;
+            elements。totalQuestions。textContent = currentQuestions.length;
             updateProgressBar();
             showCurrentQuestion();
         }
