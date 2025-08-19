@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>在线做题系统</title>
     <style>
+        /* 样式保持不变 */
         body{font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:0 auto;padding:20px;line-height:1.6;background-color:#f5f7fa;color:#333}
         h1,h2{color:#2c3e50;text-align:center;margin-bottom:20px}
         .upload-section,.quiz-section,.result-section{background:#fff;padding:25px;margin-bottom:25px;border-radius:8px;box-shadow:0 3px 10px rgba(0,0,0,.08)}
@@ -340,15 +341,15 @@
         let userAnswers = [];
         let showAllResults = false;
 
-        // 已根据你的信息配置仓库参数
-        const GITHUB_USER = "jianzongX";    // 你的GitHub用户名
-        const REPO_NAME = "QB";             // 你的仓库名
-        const BRANCH_NAME = "main";         // 仓库主分支（通常是main或master）
+        // 你的仓库信息
+        const GITHUB_USER = "jianzongX";
+        const REPO_NAME = "QB";
+        const BRANCH_NAME = "main";
 
-        // 1.xls的加载地址（自动生成）
-        const EXCEL_FILE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/${BRANCH_NAME}/1.xls`;
+        // 关键修改：使用GitHub Pages URL加载文件（避免跨域问题）
+        const EXCEL_FILE_URL = `https://${GITHUB_USER}.github.io/${REPO_NAME}/1.xls`;
 
-        // DOM元素引用
+        // DOM元素引用（保持不变）
         const elements = {
             loadingSection: document.getElementById('loadingSection'),
             errorSection: document.getElementById('errorSection'),
@@ -384,14 +385,14 @@
             reviewWrongBtn: document.getElementById('reviewWrongBtn')
         };
 
-        // 初始化：自动加载题库
+        // 初始化函数（保持不变）
         function init() {
             elements.questionModal.style.display = 'none';
             bindEventListeners();
-            loadExcelFromGitHub(); // 页面加载时自动读取GitHub的1.xls
+            loadExcelFromGitHub();
         }
 
-        // 绑定事件监听器
+        // 绑定事件监听器（保持不变）
         function bindEventListeners() {
             elements.startQuizBtn.addEventListener('click', startQuiz);
             elements.submitBtn.addEventListener('click', submitAnswer);
@@ -417,63 +418,71 @@
             });
         }
 
-        // 从GitHub加载Excel文件
+        // 加载Excel文件（增加超时处理）
         function loadExcelFromGitHub() {
-            fetch(EXCEL_FILE_URL)
-                .then(response => {
-                    if (!response.ok) throw new Error(`文件加载失败（${response.status}）`);
-                    return response.arrayBuffer(); // 获取二进制数据
-                })
-                .then(data => {
-                    try {
-                        // 解析Excel文件
-                        const wb = XLSX.read(new Uint8Array(data), { type: 'array' });
-                        const ws = wb.Sheets[wb.SheetNames[0]];
-                        const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 });
-                        
-                        // 处理题库数据
-                        allQuestions = processExcelData(rawData);
-                        
-                        if (allQuestions.length === 0) {
-                            throw new Error('未解析到有效题目，请检查1.xls格式是否正确');
-                        }
-                        
-                        // 显示题库信息，切换到测验区域
-                        elements.totalQuestionsCount.textContent = allQuestions.length;
-                        const defaultEnd = Math.min(allQuestions.length, 10);
-                        elements.startRange.value = 1;
-                        elements.endRange.value = defaultEnd;
-                        elements.startRange.max = allQuestions.length;
-                        elements.endRange.max = allQuestions.length;
-                        
-                        elements.loadingSection.classList.add('hidden');
-                        elements.quizSection.classList.remove('hidden');
-                    } catch (err) {
-                        showError(`解析题库失败：${err.message}`);
+            // 设置10秒超时
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('加载超时，请检查网络或文件大小')), 10000);
+            });
+
+            Promise.race([
+                fetch(EXCEL_FILE_URL)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP错误（${response.status}）`);
+                        return response.arrayBuffer();
+                    }),
+                timeoutPromise
+            ])
+            .then(data => {
+                try {
+                    // 解析Excel文件
+                    const wb = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                    
+                    // 处理题库数据
+                    allQuestions = processExcelData(rawData);
+                    
+                    if (allQuestions.length === 0) {
+                        throw new Error('未解析到有效题目，请检查1.xls格式是否正确');
                     }
-                })
-                .catch(err => {
-                    showError(`加载失败：${err.message}。请确认1.xls已上传到仓库根目录`);
-                });
+                    
+                    // 显示题库信息
+                    elements.totalQuestionsCount.textContent = allQuestions.length;
+                    const defaultEnd = Math.min(allQuestions.length, 10);
+                    elements.startRange.value = 1;
+                    elements.endRange.value = defaultEnd;
+                    elements.startRange.max = allQuestions.length;
+                    elements.endRange.max = allQuestions.length;
+                    
+                    elements.loadingSection.classList.add('hidden');
+                    elements.quizSection.classList.remove('hidden');
+                } catch (err) {
+                    showError(`解析失败：${err.message}（可能是文件格式错误）`);
+                }
+            })
+            .catch(err => {
+                showError(`加载失败：${err.message}。请确认：1.xls已上传且GitHub Pages已生效`);
+            });
         }
 
-        // 显示错误信息
+        // 显示错误信息（增强提示）
         function showError(message) {
             elements.loadingSection.classList.add('hidden');
             elements.errorText.innerHTML = `
                 <p>${message}</p>
-                <p>请检查：</p>
-                <ul>
-                    <li>1.xls是否已上传到QB仓库的根目录</li>
-                    <li>文件名称是否为小写的1.xls（区分大小写）</li>
-                    <li>仓库是否为公开仓库（私有仓库可能无法访问）</li>
-                    <li>分支是否为main（若你的分支是master，请修改代码中的BRANCH_NAME）</li>
-                </ul>
+                <p>排查步骤：</p>
+                <ol>
+                    <li>确认GitHub Pages已开启（访问https://jianzongX.github.io/QB能看到页面）</li>
+                    <li>确认1.xls格式正确（用Excel另存为".xls"格式，而非".xlsx"）</li>
+                    <li>文件大小不超过5MB（过大可能加载超时）</li>
+                    <li>尝试用浏览器直接下载：<a href="${EXCEL_FILE_URL}" target="_blank">${EXCEL_FILE_URL}</a></li>
+                </ol>
             `;
             elements.errorSection.classList.remove('hidden');
         }
 
-        // 处理Excel数据
+        // 以下函数保持不变（处理题目、答题、结果展示等逻辑）
         function processExcelData(data) {
             const questions = [];
             for (let i = 2; i < data.length; i++) { // 跳过前两行
@@ -512,14 +521,12 @@
             return questions;
         }
 
-        // 格式化答案显示
         function formatAnswer(question, answer) {
             return question.type === '判断' 
                 ? answer.replace(/A/g, 'T').replace(/B/g, 'F') 
                 : answer;
         }
 
-        // 开始测验
         function startQuiz() {
             const start = parseInt(elements.startRange.value);
             const end = parseInt(elements.endRange.value);
@@ -549,13 +556,11 @@
             showCurrentQuestion();
         }
 
-        // 更新进度条
         function updateProgressBar() {
             const progress = (currentIndex / currentQuestions.length) * 100;
             elements.progressBar.style.width = `${progress}%`;
         }
 
-        // 显示当前题目
         function showCurrentQuestion() {
             const question = currentQuestions[currentIndex];
             elements.currentQuestion.textContent = currentIndex + 1;
@@ -586,7 +591,6 @@
             });
         }
 
-        // 提交答案
         function submitAnswer() {
             const question = currentQuestions[currentIndex];
             let userAnswer = '';
@@ -631,7 +635,6 @@
             elements.nextBtn.classList.remove('hidden');
         }
 
-        // 下一题
         function goToNextQuestion() {
             currentIndex++;
             updateProgressBar();
@@ -639,7 +642,6 @@
             else showResults();
         }
 
-        // 显示结果
         function showResults() {
             elements.quizSection.classList.add('hidden');
             elements.resultSection.classList.remove('hidden');
@@ -656,7 +658,6 @@
             renderResults();
         }
 
-        // 渲染结果表格
         function renderResults() {
             let tableHtml = '<table><tr><th>题号</th><th>原始题号</th><th>你的答案</th><th>正确答案</th><th>结果</th></tr>';
             let displayedCount = 0;
@@ -692,7 +693,6 @@
             elements.detail.innerHTML = tableHtml;
         }
 
-        // 显示题目详情
         window.showQuestionDetail = function(index) {
             if (index === undefined || !userAnswers || !userAnswers[index]) return;
             
@@ -734,7 +734,6 @@
             elements.questionModal.style.display = 'flex';
         };
 
-        // 复习错题
         function reviewWrongQuestions() {
             const wrongQuestions = userAnswers
                 。filter(answer => !answer.isCorrect)
@@ -759,19 +758,16 @@
             showCurrentQuestion();
         }
 
-        // 隐藏模态框
         function hideModal() {
             elements.questionModal.style.display = 'none';
         }
 
-        // 重新开始
         function restart() {
             elements.resultSection.classList.add('hidden');
             elements.quizArea.classList.add('hidden');
             elements.quizSection.classList.remove('hidden');
         }
 
-        // 页面加载完成后初始化
         window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
