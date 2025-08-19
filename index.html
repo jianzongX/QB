@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>在线做题系统</title>
     <style>
-        /* 保持原有样式不变 */
         body{font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:0 auto;padding:20px;line-height:1.6;background-color:#f5f7fa;color:#333}
         h1,h2{color:#2c3e50;text-align:center;margin-bottom:20px}
         .upload-section,.quiz-section,.result-section{background:#fff;padding:25px;margin-bottom:25px;border-radius:8px;box-shadow:0 3px 10px rgba(0,0,0,.08)}
@@ -341,12 +340,12 @@
         let userAnswers = [];
         let showAllResults = false;
 
-        // 请修改为你的GitHub仓库信息
-        const GITHUB_USER = "你的GitHub用户名";    // 例如：octocat
-        const REPO_NAME = "你的仓库名";          // 例如：online-quiz
-        const BRANCH_NAME = "main";             // 通常是main或master
+        // 已根据你的信息配置仓库参数
+        const GITHUB_USER = "jianzongX";    // 你的GitHub用户名
+        const REPO_NAME = "QB";             // 你的仓库名
+        const BRANCH_NAME = "main";         // 仓库主分支（通常是main或master）
 
-        // 计算1.xls的Raw文件URL
+        // 1.xls的加载地址（自动生成）
         const EXCEL_FILE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/${BRANCH_NAME}/1.xls`;
 
         // DOM元素引用
@@ -356,11 +355,9 @@
             errorText: document.getElementById('errorText'),
             quizSection: document.getElementById('quizSection'),
             resultSection: document.getElementById('resultSection'),
-            // 范围选择元素
             startRange: document.getElementById('startRange'),
             endRange: document.getElementById('endRange'),
             totalQuestionsCount: document.getElementById('totalQuestionsCount'),
-            // 其他元素
             startQuizBtn: document.getElementById('startQuizBtn'),
             quizArea: document.getElementById('quizArea'),
             currentQuestion: document.getElementById('current'),
@@ -463,11 +460,20 @@
         // 显示错误信息
         function showError(message) {
             elements.loadingSection.classList.add('hidden');
-            elements.errorText.textContent = message;
+            elements.errorText.innerHTML = `
+                <p>${message}</p>
+                <p>请检查：</p>
+                <ul>
+                    <li>1.xls是否已上传到QB仓库的根目录</li>
+                    <li>文件名称是否为小写的1.xls（区分大小写）</li>
+                    <li>仓库是否为公开仓库（私有仓库可能无法访问）</li>
+                    <li>分支是否为main（若你的分支是master，请修改代码中的BRANCH_NAME）</li>
+                </ul>
+            `;
             elements.errorSection.classList.remove('hidden');
         }
 
-        // 处理Excel数据（与之前逻辑一致）
+        // 处理Excel数据
         function processExcelData(data) {
             const questions = [];
             for (let i = 2; i < data.length; i++) { // 跳过前两行
@@ -513,7 +519,7 @@
                 : answer;
         }
 
-        // 开始测验（与之前逻辑一致）
+        // 开始测验
         function startQuiz() {
             const start = parseInt(elements.startRange.value);
             const end = parseInt(elements.endRange.value);
@@ -543,12 +549,13 @@
             showCurrentQuestion();
         }
 
-        // 以下函数与之前逻辑一致（省略重复注释）
+        // 更新进度条
         function updateProgressBar() {
             const progress = (currentIndex / currentQuestions.length) * 100;
             elements.progressBar.style.width = `${progress}%`;
         }
 
+        // 显示当前题目
         function showCurrentQuestion() {
             const question = currentQuestions[currentIndex];
             elements.currentQuestion.textContent = currentIndex + 1;
@@ -579,6 +586,7 @@
             });
         }
 
+        // 提交答案
         function submitAnswer() {
             const question = currentQuestions[currentIndex];
             let userAnswer = '';
@@ -623,6 +631,7 @@
             elements.nextBtn.classList.remove('hidden');
         }
 
+        // 下一题
         function goToNextQuestion() {
             currentIndex++;
             updateProgressBar();
@@ -630,6 +639,7 @@
             else showResults();
         }
 
+        // 显示结果
         function showResults() {
             elements.quizSection.classList.add('hidden');
             elements.resultSection.classList.remove('hidden');
@@ -646,6 +656,7 @@
             renderResults();
         }
 
+        // 渲染结果表格
         function renderResults() {
             let tableHtml = '<table><tr><th>题号</th><th>原始题号</th><th>你的答案</th><th>正确答案</th><th>结果</th></tr>';
             let displayedCount = 0;
@@ -681,6 +692,7 @@
             elements.detail.innerHTML = tableHtml;
         }
 
+        // 显示题目详情
         window.showQuestionDetail = function(index) {
             if (index === undefined || !userAnswers || !userAnswers[index]) return;
             
@@ -722,6 +734,7 @@
             elements.questionModal.style.display = 'flex';
         };
 
+        // 复习错题
         function reviewWrongQuestions() {
             const wrongQuestions = userAnswers
                 。filter(answer => !answer.isCorrect)
@@ -746,16 +759,19 @@
             showCurrentQuestion();
         }
 
+        // 隐藏模态框
         function hideModal() {
             elements.questionModal.style.display = 'none';
         }
 
+        // 重新开始
         function restart() {
             elements.resultSection.classList.add('hidden');
             elements.quizArea.classList.add('hidden');
             elements.quizSection.classList.remove('hidden');
         }
 
+        // 页面加载完成后初始化
         window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
