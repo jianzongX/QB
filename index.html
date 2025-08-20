@@ -6,20 +6,20 @@
     <style>
         body{font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:20px;line-height:1.6}
         h1,h2{color:#333;text-align:center}
-        。loading-section,.quiz-section,.result-section{background:#f9f9f9;padding:20px;margin-bottom:20px;border-radius:5px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+        .loading-section,.quiz-section,.result-section{background:#f9f9f9;padding:20px;margin-bottom:20px;border-radius:5px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
         button{background:#4CAF50;color:#fff;border:none;padding:10px 15px;border-radius:4px;cursor:pointer;font-size:16px}
         button:hover{background:#45a049}
-        。option{margin:8px 0}
-        。correct{color:green;font-weight:bold}
-        。incorrect{color:red}
-        。score{font-size:24px;font-weight:bold;text-align:center;margin:20px 0}
+        .option{margin:8px 0}
+        .correct{color:green;font-weight:bold}
+        .incorrect{color:red}
+        .score{font-size:24px;font-weight:bold;text-align:center;margin:20px 0}
         table{width:100%;border-collapse:collapse;margin:20px 0}
         th,td{border:1px solid #ddd;padding:8px;text-align:left}
         th{background:#f2f2f2}
-        。hidden{display:none !important;}
+        .hidden{display:none !important;}
         
         /* 加载动画 */
-        。loading {
+        .loading {
             display: inline-block;
             width: 50px;
             height: 50px;
@@ -33,7 +33,7 @@
             to { transform: rotate(360deg); }
         }
         
-        。loading-container {
+        .loading-container {
             text-align: center;
             padding: 20px;
         }
@@ -621,8 +621,8 @@
             // 构建题目详情HTML
             let detailHtml = `
                 <p><strong>题型：</strong>${question.type}</p>
-                <p><strong>原始题号：</strong>${question。originalIndex}</p>
-                <p><strong>题目：</strong>${question。text}</p>
+                <p><strong>原始题号：</strong>${question.originalIndex}</p>
+                <p><strong>题目：</strong>${question.text}</p>
                 <p><strong>选项：</strong></p>
                 <ul>`;
             
@@ -677,4 +677,3 @@
     </script>
 </body>
 </html>
-
