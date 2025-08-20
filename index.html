@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>在线做题系统</title>
+    <title>在线做题系统 - 错题模式</title>
     <style>
         body{font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:20px;line-height:1.6}
         h1,h2{color:#333;text-align:center}
@@ -159,6 +159,29 @@
             border-radius: 4px;
             text-align: center;
         }
+        
+        /* 错题统计样式 */
+        .wrong-summary {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .wrong-summary h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .wrong-actions {
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .wrong-actions button {
+            margin: 0 5px;
+        }
     </style>
 </head>
 <body>
@@ -205,8 +228,20 @@
     <div id="resultSection" class="result-section hidden">
         <h2>测试结果</h2>
         <div class="score">得分：<span id="score">0</span> / <span id="max">0</span></div>
+        
+        <!-- 错题统计 -->
+        <div id="wrongSummary" class="wrong-summary hidden">
+            <h3>错题统计</h3>
+            <p>共答错 <span id="wrongCount">0</span> 道题，以下是您的错题列表：</p>
+        </div>
+        
         <div id="detail"></div>
-        <button id="restartBtn">重新开始</button>
+        
+        <!-- 错题操作按钮 -->
+        <div id="wrongActions" class="wrong-actions hidden">
+            <button id="reviewWrongBtn">重新练习错题</button>
+            <button id="restartBtn">重新开始测试</button>
+        </div>
     </div>
 
     <!-- 题目详情模态框 -->
@@ -231,6 +266,7 @@
         let currentIndex = 0;
         let userScore = 0;
         let userAnswers = [];
+        let wrongQuestions = []; // 存储错题
 
         // DOM 元素引用
         const elements = {
@@ -261,7 +297,12 @@
             closeModalBtn: document.getElementById('closeModalBtn'),
             // 正确答案显示区域
             correctAnswerDisplay: document.getElementById('correctAnswerDisplay'),
-            correctAnswerText: document.getElementById('correctAnswerText')
+            correctAnswerText: document.getElementById('correctAnswerText'),
+            // 错题相关元素
+            wrongSummary: document.getElementById('wrongSummary'),
+            wrongCount: document.getElementById('wrongCount'),
+            wrongActions: document.getElementById('wrongActions'),
+            reviewWrongBtn: document.getElementById('reviewWrongBtn')
         };
 
         // 初始化函数
@@ -287,6 +328,9 @@
             
             // 重新开始按钮点击事件
             elements.restartBtn.addEventListener('click', restart);
+            
+            // 重新练习错题按钮点击事件
+            elements.reviewWrongBtn.addEventListener('click', reviewWrongQuestions);
             
             // 关闭模态框按钮点击事件
             elements.closeModal.addEventListener('click', hideModal);
@@ -454,6 +498,7 @@
             currentIndex = 0;
             userScore = 0;
             userAnswers = [];
+            wrongQuestions = []; // 重置错题
             
             // 显示测验区域
             elements.quizArea.classList.remove('hidden');
@@ -520,7 +565,8 @@
                 question: question,
                 userAnswer: userAnswer,
                 correctAnswer: correctAnswer,
-                isCorrect: isCorrect
+                isCorrect: isCorrect,
+                index: currentIndex // 记录当前题目在currentQuestions中的索引
             });
             
             // 更新分数
@@ -530,6 +576,14 @@
                 // 错误时显示格式化后的正确答案
                 elements.correctAnswerText.textContent = formatAnswer(question, correctAnswer);
                 elements.correctAnswerDisplay.classList.remove('hidden');
+                
+                // 记录错题
+                wrongQuestions.push({
+                    question: question,
+                    userAnswer: userAnswer,
+                    correctAnswer: correctAnswer,
+                    index: currentIndex
+                });
             }
             
             // 标记正确和错误答案
@@ -564,7 +618,7 @@
             }
         }
 
-        // 显示结果
+        // 显示结果 - 只显示错题
         function showResults() {
             // 隐藏测验区域，显示结果区域
             elements.quizSection.classList.add('hidden');
@@ -574,34 +628,70 @@
             elements.score.textContent = userScore;
             elements.maxScore.textContent = currentQuestions.length;
             
-            // 生成结果表格
-            let tableHtml = '<table><tr><th>题</th><th>原始题号</th><th>你的答案</th><th>正确答案</th><th>结果</th></tr>';
+            // 显示错题统计
+            if (wrongQuestions.length > 0) {
+                elements.wrongSummary.classList.remove('hidden');
+                elements.wrongCount.textContent = wrongQuestions.length;
+                elements.wrongActions.classList.remove('hidden');
+            } else {
+                elements.wrongSummary.classList.add('hidden');
+                elements.wrongActions.classList.add('hidden');
+            }
             
-            userAnswers.forEach((answer, index) => {
-                // 对答案进行格式化显示
-                const formattedUserAnswer = formatAnswer(answer.question, answer.userAnswer);
-                const formattedCorrectAnswer = formatAnswer(answer.question, answer.correctAnswer);
-                
-                // 为每个题目序号创建点击元素
-                tableHtml += `
-                <tr>
-                    <td>
-                        <span class="question-number" 
-                              onclick="showQuestionDetail(${index})">
-                            ${index + 1}
-                        </span>
-                    </td>
-                    <td>${answer.question.originalIndex}</td>
-                    <td>${formattedUserAnswer}</td>
-                    <td>${formattedCorrectAnswer}</td>
-                    <td class="${answer.isCorrect ? 'correct' : 'incorrect'}">
-                        ${answer.isCorrect ? '✓' : '✗'}
-                    </td>
-                </tr>`;
-            });
+            // 生成结果表格 - 只显示错题
+            let tableHtml = '<table><tr><th>序号</th><th>原始题号</th><th>你的答案</th><th>正确答案</th><th>操作</th></tr>';
+            
+            if (wrongQuestions.length === 0) {
+                tableHtml += '<tr><td colspan="5" style="text-align:center;">恭喜您！没有错题</td></tr>';
+            } else {
+                wrongQuestions.forEach((answer, index) => {
+                    // 对答案进行格式化显示
+                    const formattedUserAnswer = formatAnswer(answer.question, answer.userAnswer);
+                    const formattedCorrectAnswer = formatAnswer(answer.question, answer.correctAnswer);
+                    
+                    // 为每个题目序号创建点击元素
+                    tableHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${answer.question.originalIndex}</td>
+                        <td class="incorrect">${formattedUserAnswer}</td>
+                        <td class="correct">${formattedCorrectAnswer}</td>
+                        <td>
+                            <span class="question-number" 
+                                  onclick="showQuestionDetail(${answer.index})">
+                                查看详情
+                            </span>
+                        </td>
+                    </tr>`;
+                });
+            }
             
             tableHtml += '</table>';
             elements.detail.innerHTML = tableHtml;
+        }
+
+        // 重新练习错题
+        function reviewWrongQuestions() {
+            if (wrongQuestions.length === 0) {
+                alert('没有错题可以练习');
+                return;
+            }
+            
+            // 从错题中提取题目
+            currentQuestions = wrongQuestions.map(item => item.question);
+            
+            // 重置状态
+            currentIndex = 0;
+            userScore = 0;
+            userAnswers = [];
+            
+            // 隐藏结果区域，显示测验区域
+            elements.resultSection.classList.add('hidden');
+            elements.quizSection.classList.remove('hidden');
+            elements.quizArea.classList.remove('hidden');
+            elements.totalQuestions.textContent = currentQuestions.length;
+            
+            showCurrentQuestion();
         }
 
         // 显示题目详情（全局函数，确保能被onclick调用）
@@ -652,7 +742,7 @@
                 <div class="answer-info">
                     <p><strong>你的答案：</strong>${formattedUserAnswer || '未作答'}</p>
                     <p><strong>正确答案：</strong>${formattedCorrectAnswer}</p>
-                    <p><strong>结果：</strong><span class="${answerInfo.isCorrect ? 'correct' : 'incorrect'}">${answerInfo.isCorrect ? '正确' : '错误'}</span></p>
+                    <p><strong>结果：</strong><span class="${answerInfo。isCorrect ? 'correct' : 'incorrect'}">${answerInfo.isCorrect ? '正确' : '错误'}</span></p>
                 </div>`;
             
             // 更新模态框内容并显示
